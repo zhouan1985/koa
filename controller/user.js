@@ -1,7 +1,7 @@
 import Sequelize from 'Sequelize'
 import USER from '../model/USER'
 import constant from '../tool/constant'
-import {result,encrypt,decryption} from '../tool/tool'
+import { result, encrypt, decryption } from '../tool/tool'
 var Op = Sequelize.Op;
 
 const codeSuccess = constant.code.success
@@ -10,93 +10,138 @@ const msgSuccess = constant.msg.success
 
 
 // 查询所有
-const listAll = async (ctx) => {
-   try{
-    const data = await USER.findAll().then(res=>{
-      result(ctx,codeSuccess,res)
-    })
-   }catch(err){
-    const msg = err.errors[0]
-    result(ctx,codeError,msg)
-   }
-  }
-// 分页查询搜索
-const list = async ctx =>{
-  try{
-    const params = ctx.request.body
-    const limit = params.limit ? params.limit : 10
-    const offset = params.offset ? params.offset : 0
-    const search = params.search ? params.search : ''
-    console.log(params)
-    await USER.findAll({
-      limit: Number(limit),
-      offset: Number(offset),
-      order: [
-        ['id', 'DESC'],
-       ],
-      where: {
-        name:{
-          [Op.like]: `%${search}%`
+const listAll = async(ctx) => {
+        try {
+            const data = await USER.findAll().then(res => {
+                result(ctx, codeSuccess, res)
+            })
+        } catch (err) {
+            const msg = err.errors[0]
+            result(ctx, codeError, msg)
         }
-      }
-    }).then(res=>{
-      result(ctx,codeSuccess,res)
-    })
-   }catch(err){
-    const msg = err.errors[0]
-    result(ctx,codeError,msg)
-   }
+    }
+    // 分页查询搜索
+const list = async ctx => {
+    try {
+        const params = ctx.request.body
+        const limit = params.limit ? Number(params.limit) : 10
+        const offset = params.offset ? Number(params.offset) : 0
+        const search = params.search ? params.search : ''
+        console.log(params)
+        await USER.findAll({
+            limit: limit,
+            offset: (offset - 1) * limit,
+            order: [
+                ['id', 'DESC'],
+            ],
+            where: {
+                name: {
+                    [Op.like]: `%${search}%`
+                }
+            }
+        }).then(res => {
+            result(ctx, codeSuccess, res)
+        })
+    } catch (err) {
+        const msg = err.errors[0]
+        result(ctx, codeError, msg)
+    }
 }
 
 // 通过id 查询
-const findUserById = async ctx =>{
-  const params = ctx.params
-  if(!params.id){
-    result(ctx,codeError,'用户id不能为空')
-    return
-  }
-  try{
-    // const data = await USER.findById(1,{})
-    await USER.findOne({
-      where:{
-        id:params.id
-      }
-    }).then(res=>{
-      result(ctx,codeSuccess,res)
-    })
-  }catch(err){
-    const msg = err.errors[0]
-    result(ctx,codeError,msg)
-  }
-}
-// 创建用户
-  const add = async (ctx) => {
+const findUserById = async ctx => {
+        const params = ctx.params
+        if (!params.id) {
+            result(ctx, codeError, '用户id不能为空')
+            return
+        }
+        try {
+            // const data = await USER.findById(1,{})
+            await USER.findOne({
+                where: {
+                    id: params.id
+                }
+            }).then(res => {
+                result(ctx, codeSuccess, res)
+            })
+        } catch (err) {
+            const msg = err.errors[0]
+            result(ctx, codeError, msg)
+        }
+    }
+    // 创建用户
+const add = async(ctx) => {
+        const params = ctx.request.body
+        try {
+            if (params.password) {
+                params.password = encrypt(params.password)
+            }
+            await USER.create(params).then(res => {
+                result(ctx, codeSuccess, msgSuccess)
+            })
+        } catch (err) {
+            const msg = err.errors[0]
+            result(ctx, codeError, msg.message)
+        }
+    }
+    // 修改用户
+const update = async ctx => {
+        const params = ctx.request.body
+        const userId = params.id
+        if (!userId) {
+            result(ctx, codeError, 'id不能为空')
+            return
+        }
+        const name = params.name
+        const password = params.password
+        if (!name || !password) {
+            result(ctx, codeError, '用户名或密码不能为空')
+            return
+        }
+        try {
+            await USER.update({
+                name: name,
+                password: password
+            }, {
+                where: {
+                    id: userId
+                }
+            }).then(res => {
+                result(ctx, codeSuccess, msgSuccess)
+            })
+        } catch (err) {
+            const msg = err.errors[0]
+            result(ctx, codeError, msg.message)
+        }
+
+    }
+    // 删除
+const del = async ctx => {
     const params = ctx.request.body
+    const userId = params.id
+    if (!userId) {
+        result(ctx, codeError, 'id不能为空')
+        return
+    }
     try {
-      if(params.password){
-        params.password = encrypt(params.password)
-      }
-      await USER.create(params).then(res=>{
-        result(ctx,codeSuccess,msgSuccess)
-      })
-    }
-    catch(err) {
-      const msg = err.errors[0]
-      result(ctx,codeError,msg.message)
-    }
-  }
-  // 修改用户
-  const updateUser = async ctx =>{
-    const params = ctx.request.body
-    if(!params.id){
-      result(ctx,codeError,'id不能为空')
-      return
+        await USER.destroy({
+            where: {
+                id: userId
+            }
+        }).then(res => {
+            result(ctx, codeSuccess, msgSuccess)
+        })
+    } catch (err) {
+        const msg = err.errors[0]
+        result(ctx, codeError, msg.message)
     }
 
-  }
-  export default {
-    listAll:listAll,
-    list:list,
-    add:add,
-    findUserById:findUserById,
-  }
+}
+export default {
+    listAll: listAll,
+    list: list,
+    add: add,
+    findUserById: findUserById,
+    update: update,
+    del: del,
+}
