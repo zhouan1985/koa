@@ -24,13 +24,12 @@ const listAll = async (ctx) => {
 const list = async ctx =>{
   try{
     const params = ctx.request.body
-    const limit = params.limit ? params.limit : 10
-    const offset = params.offset ? params.offset : 0
+    const limit = params.limit ? Number(params.limit) : 10
+    const offset = params.offset ? Number(params.offset) : 0
     const search = params.search ? params.search : ''
-    console.log(params)
     await USER.findAll({
-      limit: Number(limit),
-      offset: Number(offset),
+      limit: limit,
+      offset: (offset - 1) * limit,
       order: [
         ['id', 'DESC'],
        ],
