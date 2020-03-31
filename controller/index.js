@@ -76,9 +76,8 @@ const download = async ctx =>{
       }).then(res=>{
         const fileName = res.fileName;
         const path =config.uploadFile + fileName;
-        // ctx.attachment(path);
-        console.log(fileName)
-        send(ctx, fileName,{ root: config.uploadFile});
+        ctx.attachment(path);
+        send(ctx, path,{ root: config.uploadFile});
       })
 }
 export default {

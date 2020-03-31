@@ -85,17 +85,50 @@ const findUserById = async ctx =>{
     }
   }
   // 修改用户
-  const updateUser = async ctx =>{
+  const update = async ctx =>{
     const params = ctx.request.body
     if(!params.id){
       result(ctx,codeError,'id不能为空')
       return
     }
-
+    if(params.password){
+      params.password = encrypt(params.password)
+    }
+    try{
+      await USER.update({
+        name:params.name,
+        password:params.password
+      },{
+        where:{
+          id:params.id
+        }
+      }).then(res=>{
+        result(ctx,codeSuccess,msgSuccess)
+      })
+    }catch(err){
+      const msg = err.errors[0]
+      result(ctx,codeError,msg.message)
+    }
+  }
+  const del = async ctx =>{
+    const params =ctx.params
+    if(!params.id){
+      result(ctx,codeError,'id不能为空')
+      return
+    }
+    await USER.destory({
+      where:{
+        id:params.id
+      }
+    }).then(res=>{
+      result(ctx,codeSuccess,msgSuccess)
+    })
   }
   export default {
     listAll:listAll,
     list:list,
     add:add,
     findUserById:findUserById,
+    update:update,
+    del:del
   }
